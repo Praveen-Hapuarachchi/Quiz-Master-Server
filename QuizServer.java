@@ -59,21 +59,24 @@ public class QuizServer {
                 if (questionData == null || questionData.equalsIgnoreCase("exit")) break;
 
                 try {
-                    String[] parts = questionData.split(";");
-                    if (parts.length != 6) {
-                        out.println("Error: Invalid question format. Use format: question;A;B;C;D;CorrectOption");
-                        continue;
+                    String[] questionsArray = questionData.split("\n");
+                    for (String questionLine : questionsArray) {
+                        String[] parts = questionLine.split(";");
+                        if (parts.length != 6) {
+                            out.println("Error: Invalid question format. Use format: question;A;B;C;D;CorrectOption");
+                            continue;
+                        }
+
+                        Question question = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+                        questions.add(question);
+                        System.out.println("Question added: " + question.question);
                     }
+                    out.println("Questions added successfully!");
 
-                    Question question = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
-                    questions.add(question);
-                    System.out.println("Question added: " + question.question);
-                    out.println("Question added successfully!");
-
-                    // Send the question to all connected examiners
-                    sendQuestionToExaminers(question);
+                    // Send the questions to all connected examiners
+                    sendQuestionsToExaminers();
                 } catch (Exception e) {
-                    out.println("Error adding question: " + e.getMessage());
+                    out.println("Error adding questions: " + e.getMessage());
                 }
             }
         }
@@ -88,36 +91,49 @@ public class QuizServer {
             scores.put(examinerName, 0); // Initialize the examiner's score
             examiners.add(clientSocket); // Add the examiner to the list of connected clients
 
-            for (Question question : questions) {
-                // Send the question and all options to the examiner as one line
-                out.println(question.toString());
-                out.println("Enter your answer (A/B/C/D):");
+            try {
+                for (Question question : questions) {
+                    // Send the question and all options to the examiner as one line
+                    out.println(question.toString());
 
-                String answer = in.readLine(); // Read the examiner's answer
-                if (answer == null || answer.isEmpty()) {
-                    out.println("Invalid answer. Moving to the next question.");
-                    continue;
+                    String answer = in.readLine(); // Read the examiner's answer
+                    if (answer == null || answer.isEmpty()) {
+                        out.println("Invalid answer. Moving to the next question.");
+                        continue;
+                    }
+
+                    // Validate the answer
+                    boolean isCorrect = question.correct.equalsIgnoreCase(answer.trim());
+                    if (isCorrect) {
+                        scores.put(examinerName, scores.get(examinerName) + 1); // Update the score
+                    }
+
+                    // Send the result back to the examiner
+                    String resultMessage = examinerName + " gave answer as " + answer.toUpperCase() + ") " + getAnswerOption(answer) + 
+                        (isCorrect ? " - Correct!" : " - Incorrect.");
+                    out.println(resultMessage); // Send feedback about correctness
+
+                    // Log the result on the server's side
+                    System.out.println(resultMessage);
                 }
-
-                // Validate the answer
-                boolean isCorrect = question.correct.equalsIgnoreCase(answer.trim());
-                if (isCorrect) {
-                    scores.put(examinerName, scores.get(examinerName) + 1); // Update the score
-                }
-
-                // Send the result back to the examiner
-                String resultMessage = examinerName + " gave answer as " + answer.toUpperCase() + ") " + getAnswerOption(answer) + 
-                    (isCorrect ? " - Correct!" : " - Incorrect.");
-                out.println(resultMessage); // Send feedback about correctness
-
-                // Log the result on the server's side
-                System.out.println(resultMessage);
 
                 // Send updated leaderboard to all examiners
                 sendLeaderboard();
-            }
 
-            out.println("END"); // Notify the examiner that the quiz has ended
+                out.println("END"); // Notify the examiner that the quiz has ended
+
+                // Send the final score to the examiner
+                int finalScore = scores.get(examinerName);
+                out.println(finalScore);
+            } catch (IOException e) {
+                System.err.println("Error handling examiner: " + e.getMessage());
+            } finally {
+                try {
+                    clientSocket.close(); // Ensure the socket is closed when the client disconnects
+                } catch (IOException e) {
+                    System.err.println("Error closing client socket: " + e.getMessage());
+                }
+            }
         }
 
         private void sendQuestionToExaminers(Question question) {
@@ -132,6 +148,12 @@ public class QuizServer {
                     System.err.println("Error sending question to examiner: " + e.getMessage());
                     iterator.remove(); // Remove disconnected examiner
                 }
+            }
+        }
+
+        private void sendQuestionsToExaminers() {
+            for (Question question : questions) {
+                sendQuestionToExaminers(question);
             }
         }
 
@@ -156,10 +178,10 @@ public class QuizServer {
 
         private String getAnswerOption(String answer) {
             switch (answer.toUpperCase()) {
-                case "A": return "Paris";
-                case "B": return "London";
-                case "C": return "Berlin";
-                case "D": return "Madrid";
+                case "A": return "Berlin";
+                case "B": return "Mars";
+                case "C": return "Jupiter";
+                case "D": return "Venus";
                 default: return "Invalid Answer";
             }
         }

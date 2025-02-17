@@ -10,14 +10,19 @@ public class AdminClient {
         out.println("Admin"); // Inform the server that this is the admin
 
         while (true) {
-            System.out.println("Enter question (format: question;A;B;C;D;CorrectOption):");
-            String question = consoleInput.readLine();
-
-            if (question.equalsIgnoreCase("exit")) {
-                break; // Exit the loop if "exit" is entered
+            System.out.println("Enter questions (format: question;A;B;C;D;CorrectOption). Type 'done' when finished:");
+            StringBuilder questions = new StringBuilder();
+            String question;
+            while (!(question = consoleInput.readLine()).equalsIgnoreCase("done")) {
+                questions.append(question).append("\n");
             }
 
-            out.println(question); // Send the question to the server
+            out.println(questions.toString()); // Send all questions to the server
+
+            System.out.println("Questions sent to the server. Type 'exit' to quit or add more questions.");
+            if (consoleInput.readLine().equalsIgnoreCase("exit")) {
+                break; // Exit the loop if "exit" is entered
+            }
         }
 
         socket.close(); // Close the socket when done
