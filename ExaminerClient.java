@@ -25,6 +25,10 @@ public class ExaminerClient {
             System.out.print("Enter your answer (A/B/C/D): ");
             String answer = consoleInput.readLine(); // Read the user's answer
             out.println(answer); // Send the answer to the server
+
+            // Read and display the result (whether the answer is correct or incorrect)
+            String result = in.readLine();
+            System.out.println(result);
         }
 
         socket.close(); // Close the socket after the quiz
