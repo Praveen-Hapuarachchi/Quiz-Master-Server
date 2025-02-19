@@ -6,6 +6,8 @@ public class QuizServer {
     private static Map<String, Integer> scores = new HashMap<>();
     private static List<Question> questions = new ArrayList<>();
     private static List<Socket> examiners = new ArrayList<>();
+    private static List<Socket> admins = new ArrayList<>();
+    private static int completedExaminers = 0;
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(12345)) {
@@ -54,9 +56,14 @@ public class QuizServer {
 
         private void handleAdmin() throws IOException {
             System.out.println("Admin connected.");
+            admins.add(clientSocket); // Add the admin to the list of connected clients
             while (true) {
                 String questionData = in.readLine();
                 if (questionData == null || questionData.equalsIgnoreCase("exit")) break;
+
+                if (questionData.equalsIgnoreCase("DONE")) {
+                    break;
+                }
 
                 try {
                     String[] questionsArray = questionData.split("\n");
@@ -93,7 +100,7 @@ public class QuizServer {
 
             try {
                 for (Question question : questions) {
-                    // Send the question and all options to the examiner as one line
+                    // Send the question and all options to the examiner
                     out.println(question.toString());
 
                     String answer = in.readLine(); // Read the examiner's answer
@@ -102,29 +109,40 @@ public class QuizServer {
                         continue;
                     }
 
+                    // Extract the option letter (e.g., "A" from "A) Berlin")
+                    String optionLetter = answer.trim().substring(0, 1).toUpperCase();
+
                     // Validate the answer
-                    boolean isCorrect = question.correct.equalsIgnoreCase(answer.trim());
+                    boolean isCorrect = question.correct.trim().equalsIgnoreCase(optionLetter);
                     if (isCorrect) {
                         scores.put(examinerName, scores.get(examinerName) + 1); // Update the score
                     }
 
                     // Send the result back to the examiner
-                    String resultMessage = examinerName + " gave answer as " + answer.toUpperCase() + ") " + getAnswerOption(answer) + 
-                        (isCorrect ? " - Correct!" : " - Incorrect.");
-                    out.println(resultMessage); // Send feedback about correctness
+                    String resultMessage = examinerName + " gave answer as " + optionLetter + ") " + getAnswerOption(optionLetter, question) +
+                            (isCorrect ? " - Correct!" : " - Incorrect.");
+                    out.println("RESULT|" + resultMessage); // Send feedback about correctness
 
                     // Log the result on the server's side
                     System.out.println(resultMessage);
                 }
 
-                // Send updated leaderboard to all examiners
-                sendLeaderboard();
-
-                out.println("END"); // Notify the examiner that the quiz has ended
-
                 // Send the final score to the examiner
                 int finalScore = scores.get(examinerName);
-                out.println(finalScore);
+                out.println("FINAL_SCORE|" + finalScore + "/" + questions.size());
+
+                // Notify the examiner that the quiz has ended
+                out.println("END");
+
+                // Increment the count of completed examiners
+                completedExaminers++;
+
+                // If all examiners have completed the quiz, send the leaderboard and final scores
+                if (completedExaminers == examiners.size()) {
+                    sendLeaderboard(); // Send leaderboard to all examiners
+                    sendFinalScoresToAdmins(); // Send final scores to admins
+                    closeAllSockets(); // Close all sockets
+                }
             } catch (IOException e) {
                 System.err.println("Error handling examiner: " + e.getMessage());
             } finally {
@@ -168,7 +186,7 @@ public class QuizServer {
                 Socket examiner = iterator.next();
                 try {
                     PrintWriter examinerOut = new PrintWriter(examiner.getOutputStream(), true);
-                    examinerOut.println(leaderboard.toString()); // Send the leaderboard to each examiner
+                    examinerOut.println("LEADERBOARD|" + leaderboard.toString().trim()); // Remove extra newline
                 } catch (IOException e) {
                     System.err.println("Error sending leaderboard: " + e.getMessage());
                     iterator.remove(); // Remove disconnected examiner
@@ -176,12 +194,51 @@ public class QuizServer {
             }
         }
 
-        private String getAnswerOption(String answer) {
-            switch (answer.toUpperCase()) {
-                case "A": return "Berlin";
-                case "B": return "Mars";
-                case "C": return "Jupiter";
-                case "D": return "Venus";
+        private void sendFinalScoresToAdmins() {
+            StringBuilder finalScores = new StringBuilder("Final Scores:\n");
+            for (Map.Entry<String, Integer> entry : scores.entrySet()) {
+                finalScores.append(entry.getKey()).append(": ").append(entry.getValue()).append("/").append(questions.size()).append("\n");
+            }
+
+            Iterator<Socket> iterator = admins.iterator();
+            while (iterator.hasNext()) {
+                Socket admin = iterator.next();
+                try {
+                    PrintWriter adminOut = new PrintWriter(admin.getOutputStream(), true);
+                    adminOut.println("FINAL_SCORES|" + finalScores.toString().trim()); // Remove extra newline
+                } catch (IOException e) {
+                    System.err.println("Error sending final scores to admin: " + e.getMessage());
+                    iterator.remove(); // Remove disconnected admin
+                }
+            }
+        }
+
+        private void closeAllSockets() {
+            // Close all examiner sockets
+            for (Socket examiner : examiners) {
+                try {
+                    examiner.close();
+                } catch (IOException e) {
+                    System.err.println("Error closing examiner socket: " + e.getMessage());
+                }
+            }
+
+            // Close all admin sockets
+            for (Socket admin : admins) {
+                try {
+                    admin.close();
+                } catch (IOException e) {
+                    System.err.println("Error closing admin socket: " + e.getMessage());
+                }
+            }
+        }
+
+        private String getAnswerOption(String answer, Question question) {
+            switch (answer.trim().toUpperCase()) {
+                case "A": return question.optionA;
+                case "B": return question.optionB;
+                case "C": return question.optionC;
+                case "D": return question.optionD;
                 default: return "Invalid Answer";
             }
         }
@@ -201,8 +258,8 @@ public class QuizServer {
 
         @Override
         public String toString() {
-            // This formats the options in a single row for easier viewing
-            return question + "\tA) " + optionA + " ; B) " + optionB + " ; C) " + optionC + " ; D) " + optionD;
+            // Use a delimiter that's unlikely to appear in the question or answers
+            return question + "|" + optionA + "|" + optionB + "|" + optionC + "|" + optionD;
         }
     }
 }
