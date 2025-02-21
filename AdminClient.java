@@ -87,7 +87,7 @@ public class AdminClient extends JFrame {
 
     private void sendDoneToServer() {
         out.println("DONE");
-        outputArea.append("Waiting for examiners to complete the quiz...\n");
+        outputArea.append("Admin added all questions to the quiz.\n");
     }
 
     private void receiveServerMessages() {

@@ -36,7 +36,7 @@ public class QuizServer {
         @Override
         public void run() {
             try {
-                String clientType = in.readLine(); // First message determines client type
+                String clientType = in.readLine(); // First message determines client type,Determine if client is admin or examiner
 
                 if (clientType.equals("Admin")) {
                     handleAdmin();
@@ -62,6 +62,7 @@ public class QuizServer {
                 if (questionData == null || questionData.equalsIgnoreCase("exit")) break;
 
                 if (questionData.equalsIgnoreCase("DONE")) {
+                    System.out.println("Admin added all questions to the quiz.");
                     break;
                 }
 
@@ -145,6 +146,7 @@ public class QuizServer {
                 }
             } catch (IOException e) {
                 System.err.println("Error handling examiner: " + e.getMessage());
+                examiners.remove(clientSocket); // Remove disconnected examiner
             } finally {
                 try {
                     clientSocket.close(); // Ensure the socket is closed when the client disconnects
@@ -185,8 +187,12 @@ public class QuizServer {
             while (iterator.hasNext()) {
                 Socket examiner = iterator.next();
                 try {
-                    PrintWriter examinerOut = new PrintWriter(examiner.getOutputStream(), true);
-                    examinerOut.println("LEADERBOARD|" + leaderboard.toString().trim()); // Remove extra newline
+                    if (!examiner.isClosed()) { // Check if the socket is still open
+                        PrintWriter examinerOut = new PrintWriter(examiner.getOutputStream(), true);
+                        examinerOut.println("LEADERBOARD|" + leaderboard.toString().trim());
+                    } else {
+                        iterator.remove(); // Remove disconnected examiner
+                    }
                 } catch (IOException e) {
                     System.err.println("Error sending leaderboard: " + e.getMessage());
                     iterator.remove(); // Remove disconnected examiner
@@ -195,17 +201,21 @@ public class QuizServer {
         }
 
         private void sendFinalScoresToAdmins() {
-            StringBuilder finalScores = new StringBuilder("Final Scores:\n");
+            StringBuilder finalScores = new StringBuilder();
             for (Map.Entry<String, Integer> entry : scores.entrySet()) {
-                finalScores.append(entry.getKey()).append(": ").append(entry.getValue()).append("/").append(questions.size()).append("\n");
+                finalScores.append("Final Score: ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
             }
 
             Iterator<Socket> iterator = admins.iterator();
             while (iterator.hasNext()) {
                 Socket admin = iterator.next();
                 try {
-                    PrintWriter adminOut = new PrintWriter(admin.getOutputStream(), true);
-                    adminOut.println("FINAL_SCORES|" + finalScores.toString().trim()); // Remove extra newline
+                    if (!admin.isClosed()) { // Check if the socket is still open
+                        PrintWriter adminOut = new PrintWriter(admin.getOutputStream(), true);
+                        adminOut.println("FINAL_SCORES|" + finalScores.toString().trim());
+                    } else {
+                        iterator.remove(); // Remove disconnected admin
+                    }
                 } catch (IOException e) {
                     System.err.println("Error sending final scores to admin: " + e.getMessage());
                     iterator.remove(); // Remove disconnected admin
