@@ -36,7 +36,7 @@ public class QuizServer {
         @Override
         public void run() {
             try {
-                String clientType = in.readLine(); // First message determines client type,Determine if client is admin or examiner
+                String clientType = in.readLine(); // First message determines client type
 
                 if (clientType.equals("Admin")) {
                     handleAdmin();
@@ -140,6 +140,7 @@ public class QuizServer {
 
                 // If all examiners have completed the quiz, send the leaderboard and final scores
                 if (completedExaminers == examiners.size()) {
+                    System.out.println("All examiners have completed the quiz. Sending final scores to admin...");
                     sendLeaderboard(); // Send leaderboard to all examiners
                     sendFinalScoresToAdmins(); // Send final scores to admins
                     closeAllSockets(); // Close all sockets
@@ -203,7 +204,7 @@ public class QuizServer {
         private void sendFinalScoresToAdmins() {
             StringBuilder finalScores = new StringBuilder();
             for (Map.Entry<String, Integer> entry : scores.entrySet()) {
-                finalScores.append("Final Score: ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+                finalScores.append(entry.getKey()).append(": ").append(entry.getValue()).append("/").append(questions.size()).append("\n");
             }
 
             Iterator<Socket> iterator = admins.iterator();
@@ -213,6 +214,7 @@ public class QuizServer {
                     if (!admin.isClosed()) { // Check if the socket is still open
                         PrintWriter adminOut = new PrintWriter(admin.getOutputStream(), true);
                         adminOut.println("FINAL_SCORES|" + finalScores.toString().trim());
+                        System.out.println("Final scores sent to admin: " + finalScores.toString().trim()); // Log the final scores
                     } else {
                         iterator.remove(); // Remove disconnected admin
                     }

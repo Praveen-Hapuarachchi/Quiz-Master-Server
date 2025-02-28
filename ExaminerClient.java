@@ -118,13 +118,10 @@ public class ExaminerClient extends JFrame {
             String message;
             while ((message = in.readLine()) != null) {
                 if (message.equalsIgnoreCase("END")) {
-                    String finalScore = in.readLine();
-                    if (finalScore != null && finalScore.startsWith("FINAL_SCORE|")) {
-                        outputArea.append("Quiz Ended! Your final score is: " + finalScore.substring(12) + "\n");
-                        JOptionPane.showMessageDialog(this, "Quiz Ended! Your final score is: " + finalScore.substring(12));
-                    } else {
-                        outputArea.append("Quiz Ended! Your final score is: Unknown\n");
-                    }
+                    // No need to read another line for final score
+                    String finalScore = message.substring(12); // Remove "FINAL_SCORE|" prefix
+                    outputArea.append("Quiz Ended! Your final score is: " + finalScore + "\n");
+                    JOptionPane.showMessageDialog(this, "Quiz Ended! Your final score is: " + finalScore);
                     break;
                 } else if (message.startsWith("RESULT|")) {
                     String result = message.substring(7); // Remove "RESULT|" prefix

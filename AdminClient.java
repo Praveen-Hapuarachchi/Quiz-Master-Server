@@ -94,9 +94,10 @@ public class AdminClient extends JFrame {
         try {
             String message;
             while ((message = in.readLine()) != null) {
-                if (message.startsWith("FINAL_SCORES|")) {
+                if (message.startsWith("FINAL_SCORES|")) { // Correct prefix
                     String finalScores = message.substring(13); // Remove "FINAL_SCORES|" prefix
                     outputArea.append("Final Scores:\n" + finalScores + "\n");
+                    System.out.println("Final scores received: " + finalScores); // Debug log
                 } else {
                     outputArea.append(message + "\n");
                 }
