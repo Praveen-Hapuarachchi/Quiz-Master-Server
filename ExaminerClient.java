@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +8,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ExaminerClient extends JFrame {
-
     private JLabel questionLabel;
     private JPanel optionsPanel;
     private JButton optionAButton, optionBButton, optionCButton, optionDButton;
@@ -22,69 +20,94 @@ public class ExaminerClient extends JFrame {
     private PrintWriter out;
 
     public ExaminerClient() {
-        super("Examiner Client");
+        super("Quiz Examiner");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 400);
-        setLayout(new BorderLayout());
+        setSize(800, 600);
+        setLocationRelativeTo(null);
 
-        // 1. Create Components
+        // Main panel with gradient background
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                int w = getWidth();
+                int h = getHeight();
+                Color color1 = new Color(74, 144, 226);
+                Color color2 = new Color(41, 128, 185);
+                GradientPaint gp = new GradientPaint(0, 0, color1, 0, h, color2);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, w, h);
+            }
+        };
+        mainPanel.setLayout(new BorderLayout(15, 15));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Panel for name input
-        JPanel namePanel = new JPanel();
-        namePanel.setLayout(new FlowLayout());
+        // Name input panel
+        JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        namePanel.setOpaque(false);
+        JLabel nameLabel = new JLabel("Enter Your Name:");
+        nameLabel.setForeground(Color.WHITE);
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         nameField = new JTextField(20);
-        submitNameButton = new JButton("Submit Name");
-        namePanel.add(new JLabel("Enter Your Name:"));
+        nameField.setFont(new Font("Arial", Font.PLAIN, 14));
+        submitNameButton = createStyledButton("Start Quiz", new Color(46, 204, 113));
+        namePanel.add(nameLabel);
         namePanel.add(nameField);
         namePanel.add(submitNameButton);
-        add(namePanel, BorderLayout.NORTH);
+        mainPanel.add(namePanel, BorderLayout.NORTH);
 
-        questionLabel = new JLabel("Waiting for questions...");
-        questionLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        add(questionLabel, BorderLayout.CENTER);
+        // Question panel
+        JPanel questionPanel = new JPanel(new BorderLayout(10, 10));
+        questionPanel.setOpaque(false);
+        questionLabel = new JLabel("Waiting for questions...", SwingConstants.CENTER);
+        questionLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        questionLabel.setForeground(Color.WHITE);
+        questionPanel.add(questionLabel, BorderLayout.NORTH);
 
-        optionsPanel = new JPanel();
-        optionsPanel.setLayout(new GridLayout(2, 2)); // 2 rows, 2 columns
-        optionAButton = new JButton("A");
-        optionBButton = new JButton("B");
-        optionCButton = new JButton("C");
-        optionDButton = new JButton("D");
+        optionsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+        optionsPanel.setOpaque(false);
+        optionAButton = createOptionButton("A");
+        optionBButton = createOptionButton("B");
+        optionCButton = createOptionButton("C");
+        optionDButton = createOptionButton("D");
         optionsPanel.add(optionAButton);
         optionsPanel.add(optionBButton);
         optionsPanel.add(optionCButton);
         optionsPanel.add(optionDButton);
-        add(optionsPanel, BorderLayout.SOUTH);
+        questionPanel.add(optionsPanel, BorderLayout.CENTER);
+        mainPanel.add(questionPanel, BorderLayout.CENTER);
 
-        outputArea = new JTextArea();
+        // Output area
+        outputArea = new JTextArea(10, 30);
+        outputArea.setFont(new Font("Arial", Font.PLAIN, 14));
         outputArea.setEditable(false);
+        outputArea.setBackground(new Color(255, 255, 255, 230));
         JScrollPane outputScrollPane = new JScrollPane(outputArea);
-        add(outputScrollPane, BorderLayout.EAST);
+        outputScrollPane.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color.WHITE), "Quiz Progress",
+            0, 0, new Font("Arial", Font.PLAIN, 12), Color.WHITE));
+        mainPanel.add(outputScrollPane, BorderLayout.EAST);
 
-        // Disable options initially
         setOptionsEnabled(false);
+        add(mainPanel);
 
-        // 2. Event Listeners
-
-        submitNameButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                examinerName = nameField.getText();
-                if (examinerName != null && !examinerName.trim().isEmpty()) {
-                    connectToServer(examinerName);
-                    namePanel.setVisible(false); // Hide the name input panel
-                } else {
-                    JOptionPane.showMessageDialog(ExaminerClient.this, "Please enter a valid name.");
-                }
+        // Event Listeners
+        submitNameButton.addActionListener(e -> {
+            examinerName = nameField.getText();
+            if (examinerName != null && !examinerName.trim().isEmpty()) {
+                connectToServer(examinerName);
+                namePanel.setVisible(false);
+            } else {
+                JOptionPane.showMessageDialog(this, "Please enter a valid name.");
             }
         });
 
-        ActionListener optionListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String answer = e.getActionCommand();
-                sendAnswer(answer);
-                setOptionsEnabled(false); // Disable options after answering
-            }
+        ActionListener optionListener = e -> {
+            String optionLetter = e.getActionCommand(); // Use the action command directly ("A", "B", "C", or "D")
+            sendAnswer(optionLetter);
+            setOptionsEnabled(false);
         };
 
         optionAButton.addActionListener(optionListener);
@@ -95,18 +118,56 @@ public class ExaminerClient extends JFrame {
         setVisible(true);
     }
 
+    private JButton createStyledButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(color);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setPreferredSize(new Dimension(120, 40));
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(color.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(color);
+            }
+        });
+        return button;
+    }
+
+    private JButton createOptionButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setForeground(Color.WHITE);
+        button.setBackground(new Color(52, 152, 219));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.WHITE, 2),
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)));
+        button.setOpaque(true);
+        button.setActionCommand(text); // Set action command to "A", "B", "C", or "D"
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(82, 182, 249));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(52, 152, 219));
+            }
+        });
+        return button;
+    }
+
     private void connectToServer(String name) {
         try {
             socket = new Socket("127.0.0.1", 12345);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-
-            out.println(name); // Send name to server
-            outputArea.append("Connected to server as " + name + "\n");
-
-            // Start a thread to listen for questions
+            out.println(name);
+            outputArea.append("Connected as " + name + "\n");
             new Thread(this::receiveQuestions).start();
-
         } catch (IOException e) {
             outputArea.append("Error connecting to server: " + e.getMessage() + "\n");
             JOptionPane.showMessageDialog(this, "Error connecting to server: " + e.getMessage());
@@ -118,51 +179,42 @@ public class ExaminerClient extends JFrame {
             String message;
             while ((message = in.readLine()) != null) {
                 if (message.equalsIgnoreCase("END")) {
-                    // No need to read another line for final score
-                    String finalScore = message.substring(12); // Remove "FINAL_SCORE|" prefix
-                    outputArea.append("Quiz Ended! Your final score is: " + finalScore + "\n");
-                    JOptionPane.showMessageDialog(this, "Quiz Ended! Your final score is: " + finalScore);
+                    outputArea.append("Quiz Ended!\n");
                     break;
                 } else if (message.startsWith("RESULT|")) {
-                    String result = message.substring(7); // Remove "RESULT|" prefix
-                    outputArea.append("Result: " + result + "\n");
+                    outputArea.append(message.substring(7) + "\n");
                 } else if (message.startsWith("LEADERBOARD|")) {
-                    String leaderboard = message.substring(12); // Remove "LEADERBOARD|" prefix
-                    outputArea.append("Leaderboard:\n" + leaderboard.replace("|", "\n") + "\n");
+                    outputArea.append("Leaderboard:\n" + message.substring(12).replace("|", "\n") + "\n");
                 } else if (message.startsWith("FINAL_SCORE|")) {
-                    String finalScore = message.substring(12); // Remove "FINAL_SCORE|" prefix
-                    outputArea.append("Your final score: " + finalScore + "\n");
+                    outputArea.append("Your final score: " + message.substring(12) + "\n");
+                    JOptionPane.showMessageDialog(this, "Quiz Ended! Your score: " + message.substring(12));
                 } else {
                     displayQuestion(message);
                 }
             }
         } catch (IOException e) {
-            outputArea.append("Error receiving data from server: " + e.getMessage() + "\n");
-            JOptionPane.showMessageDialog(this, "Error receiving data from server: " + e.getMessage());
+            outputArea.append("Error receiving data: " + e.getMessage() + "\n");
         } finally {
             closeConnection();
         }
     }
 
     private void displayQuestion(String questionData) {
-        String[] parts = questionData.split("\\|"); // Split question data using "|"
-        if (parts.length == 5) { // Expecting: question|A|B|C|D
-            questionLabel.setText(parts[0].trim());
-            optionAButton.setText("A) " + parts[1].trim());
-            optionBButton.setText("B) " + parts[2].trim());
-            optionCButton.setText("C) " + parts[3].trim());
-            optionDButton.setText("D) " + parts[4].trim());
-
+        String[] parts = questionData.split("\\|");
+        if (parts.length == 5) {
+            questionLabel.setText("<html><center>" + parts[0].trim() + "</center></html>");
+            optionAButton.setText("<html>A) " + parts[1].trim() + "</html>");
+            optionBButton.setText("<html>B) " + parts[2].trim() + "</html>");
+            optionCButton.setText("<html>C) " + parts[3].trim() + "</html>");
+            optionDButton.setText("<html>D) " + parts[4].trim() + "</html>");
             setOptionsEnabled(true);
         } else {
-            outputArea.append("Error: Invalid question format received: " + questionData + "\n");
+            outputArea.append("Error: Invalid question format: " + questionData + "\n");
         }
     }
 
-    private void sendAnswer(String answer) {
-        // Extract the option letter (e.g., "A" from "A) Berlin")
-        String optionLetter = answer.trim().substring(0, 1).toUpperCase();
-        out.println(optionLetter);
+    private void sendAnswer(String optionLetter) {
+        out.println(optionLetter); // Send the option letter ("A", "B", "C", or "D") directly
         outputArea.append("Answer sent: " + optionLetter + "\n");
     }
 
