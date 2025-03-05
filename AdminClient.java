@@ -42,7 +42,7 @@ public class AdminClient extends JFrame {
 
         // Title
         JLabel titleLabel = new JLabel("Quiz Admin Dashboard", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
@@ -52,17 +52,17 @@ public class AdminClient extends JFrame {
         
         JLabel instructionLabel = new JLabel("Enter questions (format: question;A;B;C;D;correct):");
         instructionLabel.setForeground(Color.WHITE);
-        instructionLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        instructionLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         inputPanel.add(instructionLabel, BorderLayout.NORTH);
 
         questionTextArea = new JTextArea(10, 40);
-        questionTextArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        questionTextArea.setFont(new Font("Arial", Font.PLAIN, 16));
         questionTextArea.setLineWrap(true);
         questionTextArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(questionTextArea);
         scrollPane.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.WHITE), "Questions Input",
-            0, 0, new Font("Arial", Font.PLAIN, 12), Color.WHITE));
+            0, 0, new Font("Arial", Font.PLAIN, 14), Color.WHITE));
         inputPanel.add(scrollPane, BorderLayout.CENTER);
 
         // Buttons panel
@@ -79,13 +79,13 @@ public class AdminClient extends JFrame {
 
         // Output area
         outputArea = new JTextArea(8, 40);
-        outputArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        outputArea.setFont(new Font("Arial", Font.PLAIN, 16));
         outputArea.setEditable(false);
         outputArea.setBackground(new Color(255, 255, 255, 230));
         JScrollPane outputScrollPane = new JScrollPane(outputArea);
         outputScrollPane.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.WHITE), "Server Feedback",
-            0, 0, new Font("Arial", Font.PLAIN, 12), Color.WHITE));
+            0, 0, new Font("Arial", Font.PLAIN, 14), Color.WHITE));
         mainPanel.add(outputScrollPane, BorderLayout.SOUTH);
 
         add(mainPanel);
@@ -112,13 +112,13 @@ public class AdminClient extends JFrame {
 
     private JButton createStyledButton(String text, Color color) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(Color.WHITE);
         button.setBackground(color);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setOpaque(true);
-        button.setPreferredSize(new Dimension(150, 40));
+        button.setPreferredSize(new Dimension(160, 45));
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBackground(color.brighter());

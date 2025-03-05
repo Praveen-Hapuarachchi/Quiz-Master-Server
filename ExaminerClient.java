@@ -49,9 +49,9 @@ public class ExaminerClient extends JFrame {
         namePanel.setOpaque(false);
         JLabel nameLabel = new JLabel("Enter Your Name:");
         nameLabel.setForeground(Color.WHITE);
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 18));
         nameField = new JTextField(20);
-        nameField.setFont(new Font("Arial", Font.PLAIN, 14));
+        nameField.setFont(new Font("Arial", Font.PLAIN, 16));
         submitNameButton = createStyledButton("Start Quiz", new Color(46, 204, 113));
         namePanel.add(nameLabel);
         namePanel.add(nameField);
@@ -62,7 +62,7 @@ public class ExaminerClient extends JFrame {
         JPanel questionPanel = new JPanel(new BorderLayout(10, 10));
         questionPanel.setOpaque(false);
         questionLabel = new JLabel("Waiting for questions...", SwingConstants.CENTER);
-        questionLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        questionLabel.setFont(new Font("Arial", Font.BOLD, 20));
         questionLabel.setForeground(Color.WHITE);
         questionPanel.add(questionLabel, BorderLayout.NORTH);
 
@@ -81,13 +81,13 @@ public class ExaminerClient extends JFrame {
 
         // Output area
         outputArea = new JTextArea(10, 30);
-        outputArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        outputArea.setFont(new Font("Arial", Font.PLAIN, 16));
         outputArea.setEditable(false);
         outputArea.setBackground(new Color(255, 255, 255, 230));
         JScrollPane outputScrollPane = new JScrollPane(outputArea);
         outputScrollPane.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.WHITE), "Quiz Progress",
-            0, 0, new Font("Arial", Font.PLAIN, 12), Color.WHITE));
+            0, 0, new Font("Arial", Font.PLAIN, 14), Color.WHITE));
         mainPanel.add(outputScrollPane, BorderLayout.EAST);
 
         setOptionsEnabled(false);
@@ -120,13 +120,13 @@ public class ExaminerClient extends JFrame {
 
     private JButton createStyledButton(String text, Color color) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(Color.WHITE);
         button.setBackground(color);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setOpaque(true);
-        button.setPreferredSize(new Dimension(120, 40));
+        button.setPreferredSize(new Dimension(160, 45));
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBackground(color.brighter());
@@ -140,7 +140,7 @@ public class ExaminerClient extends JFrame {
 
     private JButton createOptionButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setFont(new Font("Arial", Font.BOLD, 18));
         button.setForeground(Color.WHITE);
         button.setBackground(new Color(52, 152, 219));
         button.setFocusPainted(false);
